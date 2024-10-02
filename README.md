@@ -44,7 +44,7 @@ The data for this project is sourced from the Xente Challenge on Kaggle. The dat
 - [Basel II Capital Accord](https://www.bis.org/publ/bcbs128.pdf)
 - [Understanding Credit Risk](https://www.hkma.gov.hk/media/eng/doc/key-functions/financial-infrastructure/alternative_credit_scoring.pdf)
 
-  ## Contact Information
+## Contact Information
 - **Getachew Getu**
 - GitHub: [Getachew0557](https://github.com/Getachew0557)
 - Email: [getachewgetu2010@gmail.com](mailto:getachewgetu2010@gmail.com)
