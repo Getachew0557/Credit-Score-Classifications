@@ -18,6 +18,15 @@ from eda import (
     plot_outliers,
     plot_boxplots,
 )
+from feature_engineering import (
+    create_aggregate_features,
+    extract_transaction_time_features,
+    merge_aggregate_and_time_features,
+    reorder_columns,
+    encode_features,
+    handle_missing_values,
+    normalize_features
+)
 
 def main():
     # Load the data
@@ -35,6 +44,30 @@ def main():
     identify_missing_values(df)
     plot_outliers(df)
     plot_boxplots(df)
+
+    # Create aggregate features
+    aggregate_features = create_aggregate_features(df)
+
+    # Extract time-based features
+    df = extract_transaction_time_features(df)
+
+    # Merge aggregate features with extracted time-based features
+    final_df = merge_aggregate_and_time_features(df, aggregate_features)
+
+    # Reorder columns to place 'FraudResult' at the end
+    final_df = reorder_columns(final_df)
+
+    # Handle missing values
+    final_df = handle_missing_values(final_df)
+
+    # Encode categorical features
+    final_df = encode_features(final_df)
+
+    # Normalize numerical features
+    final_df = normalize_features(final_df)
+
+    # Display the final DataFrame
+    print("Final DataFrame after feature engineering:\n", final_df.head())
 
 if __name__ == "__main__":
     main()
