@@ -27,6 +27,18 @@ from feature_engineering import (
     handle_missing_values,
     normalize_features
 )
+from WoE_binning import (
+    calculate_rfms_components,
+    normalize_rfms_components,
+    plot_rfms_distribution,
+    plot_rfms_components,
+    visualize_rfms_space,
+    assign_risk_labels,
+    woe_binning,
+    apply_woe_binning
+
+
+)
 
 def main():
     # Load the data
@@ -38,8 +50,8 @@ def main():
     plot_numerical_histograms(df)
     plot_numerical_boxplots(df)
     plot_pairplots(df)
-    plot_categorical_distributions(df)
-    plot_categorical_vs_target(df)
+    #plot_categorical_distributions(df)
+    #plot_categorical_vs_target(df)
     correlation_analysis(df)
     identify_missing_values(df)
     plot_outliers(df)
@@ -68,6 +80,19 @@ def main():
 
     # Display the final DataFrame
     print("Final DataFrame after feature engineering:\n", final_df.head())
+
+    """Main function to execute the RFMS analysis."""
+    rfms_df = calculate_rfms_components(df)
+    rfms_df = normalize_rfms_components(rfms_df)
+    plot_rfms_distribution(rfms_df)
+    plot_rfms_components(rfms_df)
+    
+    # Visualize RFMS space
+    rfms_df = assign_risk_labels(rfms_df)
+    visualize_rfms_space(rfms_df)
+    
+    # Apply WoE binning
+    apply_woe_binning(rfms_df)
 
 if __name__ == "__main__":
     main()
