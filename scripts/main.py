@@ -27,7 +27,7 @@ from feature_engineering import (
     handle_missing_values,
     normalize_features
 )
-from WoE_binning import (
+from woe_binning import (
     calculate_rfms_components,
     normalize_rfms_components,
     plot_rfms_distribution,
@@ -50,8 +50,8 @@ def main():
     plot_numerical_histograms(df)
     plot_numerical_boxplots(df)
     plot_pairplots(df)
-    #plot_categorical_distributions(df)
-    #plot_categorical_vs_target(df)
+    plot_categorical_distributions(df)
+    plot_categorical_vs_target(df)
     correlation_analysis(df)
     identify_missing_values(df)
     plot_outliers(df)
