@@ -67,20 +67,20 @@ def visualize_rfms_space(final_df):
 
 # Main function that ties everything together
 def process_rfms_binning(final_df):
-    # Step 1: Calculate RFMS components
+    # Calculate RFMS components
     final_df = calculate_rfms_components(final_df)
     
-    # Step 2: Visualize RFMS distribution and RFMS space
+    # Visualize RFMS distribution and RFMS space
     plot_rfms_score_distribution(final_df)
     visualize_rfms_space(final_df)
     
-    # Step 3: Apply risk labeling
+    # Apply risk labeling
     final_df = apply_risk_label(final_df, threshold=0.5)
     
-    # Step 4: Bin RFMS score into discrete categories
+    # Bin RFMS score into discrete categories
     final_df = bin_rfms_score(final_df, n_bins=5)
     
-    # Step 5: Apply WoE binning
+    # Apply WoE binning
     woe_df = apply_woe_binning(final_df, 'RFMS_Binned', 'Risk_Label')
     print(woe_df)
     

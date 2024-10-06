@@ -30,6 +30,14 @@ from feature_engineering import (
 from woe_binning import process_rfms_binning
 from train_test_split import split_data
 
+from modeling import (
+    train_and_evaluate_logistic_regression,
+    train_and_evaluate_random_forest,
+    train_and_evaluate_xgboost,
+    train_and_evaluate_adaboost,
+    train_and_evaluate_decision_tree
+)
+
 def main():
     # Load the data
     df = load_data('../data/data.csv')
@@ -81,6 +89,21 @@ def main():
     print(f"Training set size: {X_train.shape[0]} samples")
     print(f"Testing set size: {X_test.shape[0]} samples")
 
+    # Train and evaluate Logistic Regression
+    train_and_evaluate_logistic_regression(X_train, X_test, y_train, y_test)
+    
+    # Train and evaluate Random Forest
+    train_and_evaluate_random_forest(X_train, X_test, y_train, y_test)
+
+    # Train and evaluate XGBoost
+    train_and_evaluate_xgboost(X_train, X_test, y_train, y_test)
+
+    # Train and evaluate AdaBoost
+    train_and_evaluate_adaboost(X_train, X_test, y_train, y_test)
+
+    # Train and evaluate Decision Tree
+    train_and_evaluate_decision_tree(X_train, X_test, y_train, y_test)
+    
 
 if __name__ == "__main__":
     main()
