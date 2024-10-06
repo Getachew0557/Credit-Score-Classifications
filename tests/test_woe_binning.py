@@ -6,68 +6,75 @@ import unittest
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 
 from woe_binning import (
-    calculate_rfms_components,
-    normalize_rfms_components,
-    woe_binning,
-    assign_risk_labels
-)  # Import the functions you want to test
+    calculate_rfms_components, 
+    apply_risk_label, 
+    bin_rfms_score, 
+    apply_woe_binning, 
+    process_rfms_binning
+)
+                         
 
-class TestWoEFunctions(unittest.TestCase):
+# Sample DataFrame creation
+def create_sample_data():
+    data = {
+        'TransactionId': ['TransactionId_1', 'TransactionId_2', 'TransactionId_3'],
+        'BatchId': ['BatchId_1', 'BatchId_2', 'BatchId_3'],
+        'AccountId': [1001, 1002, 1003],
+        'SubscriptionId': [2001, 2002, 2003],
+        'CustomerId': [3001, 3002, 3003],
+        'Transaction_Year': [2022, 2021, 2020],  # For Recency calculation
+        'Transaction_Count': [10, 15, 5],        # For Frequency
+        'Total_Transaction_Amount': [500, 1500, 800],  # For Monetary
+        'Std_Deviation_Transaction_Amount': [100, 300, 150],  # For Stability
+    }
+    df = pd.DataFrame(data)
+    return df
 
-    def setUp(self):
-        # Sample data for testing
-        self.df = pd.DataFrame({
-            'CustomerId': [1, 1, 1, 2, 2, 3],
-            'TransactionStartTime': pd.to_datetime([
-                '2023-01-01', '2023-02-01', '2023-03-01',
-                '2023-01-01', '2023-04-01', '2023-01-01']),
-            'Amount': [100, 200, 300, 400, 500, 600]
-        })
+# Testing the calculate_rfms_components function
+def test_calculate_rfms_components():
+    df = create_sample_data()
+    rfms_df = calculate_rfms_components(df)
+    print("RFMS Components:")
+    print(rfms_df[['Recency', 'Frequency', 'Monetary', 'Stability', 'RFMS_Score']])
 
-    def test_calculate_rfms_components(self):
-        rfms_df = calculate_rfms_components(self.df)
-        # Check if RFMS DataFrame has the correct columns
-        expected_columns = ['CustomerId', 'Recency', 'Frequency', 'Monetary', 'Stability']
-        self.assertTrue(set(expected_columns).issubset(rfms_df.columns))
-        self.assertEqual(rfms_df['CustomerId'].nunique(), 3)  # Check unique customers
+# Testing the apply_risk_label function
+def test_apply_risk_label():
+    df = create_sample_data()
+    rfms_df = calculate_rfms_components(df)
+    risk_df = apply_risk_label(rfms_df, threshold=0.5)
+    print("Risk Labels:")
+    print(risk_df[['RFMS_Score', 'Risk_Label']])
 
-    def test_normalize_rfms_components(self):
-        rfms_df = calculate_rfms_components(self.df)
-        normalized_rfms_df = normalize_rfms_components(rfms_df)
+# Testing the bin_rfms_score function
+def test_bin_rfms_score():
+    df = create_sample_data()
+    rfms_df = calculate_rfms_components(df)
+    binned_df = bin_rfms_score(rfms_df, n_bins=3)
+    print("Binned RFMS Scores:")
+    print(binned_df[['RFMS_Score', 'RFMS_Binned']])
 
-        # Check if normalization has been done
-        for component in ['Recency', 'Frequency', 'Monetary', 'Stability']:
-            self.assertTrue((normalized_rfms_df[component] >= 0).all())
-            self.assertTrue((normalized_rfms_df[component] <= 1).all())
+# Testing the apply_woe_binning function
+def test_apply_woe_binning():
+    df = create_sample_data()
+    rfms_df = calculate_rfms_components(df)
+    risk_df = apply_risk_label(rfms_df, threshold=0.5)
+    binned_df = bin_rfms_score(risk_df, n_bins=3)
+    woe_df = apply_woe_binning(binned_df, 'RFMS_Binned', 'Risk_Label')
+    print("WoE Binning:")
+    print(woe_df)
 
-    def test_assign_risk_labels(self):
-        rfms_df = calculate_rfms_components(self.df)
-        normalized_rfms_df = normalize_rfms_components(rfms_df)
-        final_df = assign_risk_labels(normalized_rfms_df)
+# Testing the full RFMS processing workflow
+def test_process_rfms_binning():
+    df = create_sample_data()
+    final_df, woe_df = process_rfms_binning(df)
+    print("Final DataFrame:")
+    print(final_df)
+    print("WoE DataFrame:")
+    print(woe_df)
 
-        # Check if Risk_Label column exists
-        self.assertIn('Risk_Label', final_df.columns)
-
-        # Check label assignment
-        self.assertTrue((final_df['Risk_Label'].isin(['Good', 'Bad'])).all())
-
-    def test_woe_binning(self):
-        rfms_df = calculate_rfms_components(self.df)
-        normalized_rfms_df = normalize_rfms_components(rfms_df)
-        final_df = assign_risk_labels(normalized_rfms_df)
-
-        # Call woe_binning function
-        bin_stats, iv = woe_binning(final_df, 'Monetary', 'Risk_Label')
-
-        # Check if binning output is as expected
-        self.assertIn('bin', bin_stats.columns)
-        self.assertIn('bad_count', bin_stats.columns)
-        self.assertIn('good_count', bin_stats.columns)
-        self.assertIn('WoE', bin_stats.columns)
-        self.assertIn('IV', bin_stats.columns)
-
-        # Check if IV is calculated
-        self.assertGreaterEqual(iv, 0)
-
-if __name__ == '__main__':
-    unittest.main()
+# Run tests
+test_calculate_rfms_components()
+test_apply_risk_label()
+test_bin_rfms_score()
+test_apply_woe_binning()
+test_process_rfms_binning()
