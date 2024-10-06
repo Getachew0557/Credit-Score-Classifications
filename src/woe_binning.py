@@ -2,63 +2,61 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+from sklearn.preprocessing import KBinsDiscretizer
 
-def calculate_rfms_components(df):
+def calculate_rfms_components(final_df):
     """Calculate RFMS components."""
-    df['Recency'] = (df['TransactionStartTime'].max() - df['TransactionStartTime']).dt.days
-    frequency_df = df.groupby('CustomerId').size().reset_index(name='Frequency')
-    monetary_df = df.groupby('CustomerId')['Amount'].sum().reset_index(name='Monetary')
-    stability_df = df.groupby('CustomerId')['Amount'].std().reset_index(name='Stability').fillna(0)
-
-    rfms_df = pd.merge(frequency_df, monetary_df, on='CustomerId')
-    rfms_df = pd.merge(rfms_df, stability_df, on='CustomerId')
-    rfms_df = pd.merge(rfms_df, df[['CustomerId', 'Recency']].drop_duplicates(), on='CustomerId')
+    # Calculate RFMS score components
+    final_df['Recency'] = final_df.groupby('CustomerId')['Transaction_Year'].transform('max')
+    final_df['Frequency'] = final_df['Transaction_Count']
+    final_df['Monetary'] = final_df['Total_Transaction_Amount']
+    final_df['Stability'] = final_df['Std_Deviation_Transaction_Amount']
     
-    return rfms_df
-
-def normalize_rfms_components(rfms_df):
-    """Normalize RFMS components to bring them to the same scale."""
-    for component in ['Recency', 'Frequency', 'Monetary', 'Stability']:
-        rfms_df[component] = (rfms_df[component] - rfms_df[component].min()) / (rfms_df[component].max() - rfms_df[component].min())
+    # Normalize RFMS components to bring them to the same scale
+    for col in ['Recency', 'Frequency', 'Monetary', 'Stability']:
+        final_df[col] = (final_df[col] - final_df[col].min()) / (final_df[col].max() - final_df[col].min())
     
-    rfms_df['RFMS_Score'] = rfms_df[['Recency', 'Frequency', 'Monetary', 'Stability']].mean(axis=1)
-    return rfms_df
+    # Compute RFMS score (simple average of components, can adjust this formula)
+    final_df['RFMS_Score'] = final_df[['Recency', 'Frequency', 'Monetary', 'Stability']].mean(axis=1)
+    return final_df
 
-def plot_rfms_distribution(rfms_df):
-    """Plot the distribution of RFMS Scores."""
-    sns.set(style="whitegrid")
-    plt.figure(figsize=(12, 6))
-    sns.histplot(rfms_df['RFMS_Score'], bins=30, kde=True, color='blue', stat='density')
-    
-    plt.title('Distribution of RFMS Score', fontsize=16)
-    plt.xlabel('RFMS Score', fontsize=14)
-    plt.ylabel('Density', fontsize=14)
-    plt.axvline(rfms_df['RFMS_Score'].mean(), color='red', linestyle='--', label='Mean RFMS Score')
-    plt.axvline(rfms_df['RFMS_Score'].median(), color='green', linestyle='--', label='Median RFMS Score')
+# Function to apply risk labeling based on a threshold
+def apply_risk_label(final_df, threshold=0.5):
+    final_df['Risk_Label'] = final_df['RFMS_Score'].apply(lambda x: 1 if x > threshold else 0)  # 1: Low Risk, 0: High Risk
+    return final_df
+
+# Function to bin RFMS score
+def bin_rfms_score(final_df, n_bins=5):
+    kbin = KBinsDiscretizer(n_bins=n_bins, encode='ordinal', strategy='uniform')
+    final_df['RFMS_Binned'] = kbin.fit_transform(final_df[['RFMS_Score']])
+    return final_df
+
+# Function to calculate WoE (Weight of Evidence)
+def calculate_woe(df, feature, target):
+    woe_df = df.groupby(feature)[target].agg(['count', 'sum'])
+    woe_df['good'] = woe_df['sum']  # Number of good risks
+    woe_df['bad'] = woe_df['count'] - woe_df['sum']  # Number of bad risks
+    # Calculate WoE and replace infinity values with 0
+    woe_df['woe'] = np.log(woe_df['good'] / woe_df['bad']).replace([np.inf, -np.inf], 0)
+    return woe_df
+
+# Function to apply WoE binning
+def apply_woe_binning(df, feature, target):
+    woe_df = calculate_woe(df, feature, target)
+    return woe_df
+
+# Visualization functions
+def plot_rfms_score_distribution(final_df):
+    plt.figure(figsize=(10, 6))
+    sns.histplot(final_df['RFMS_Score'], bins=30, kde=True)
+    plt.title('Distribution of RFMS Scores')
+    plt.xlabel('RFMS Score')
+    plt.ylabel('Frequency')
+    plt.axvline(x=0.5, color='red', linestyle='--', label='Threshold')
     plt.legend()
-    plt.grid()
-    plt.show()
-
-def plot_rfms_components(rfms_df):
-    """Visualize RFMS components."""
-    fig, axes = plt.subplots(2, 2, figsize=(10, 8))
-    axes[0, 0].hist(rfms_df['Recency'], bins=20, color='blue', alpha=0.7)
-    axes[0, 0].set_title('Recency Distribution')
-    
-    axes[0, 1].hist(rfms_df['Frequency'], bins=20, color='green', alpha=0.7)
-    axes[0, 1].set_title('Frequency Distribution')
-    
-    axes[1, 0].hist(rfms_df['Monetary'], bins=20, color='red', alpha=0.7)
-    axes[1, 0].set_title('Monetary Distribution')
-    
-    axes[1, 1].hist(rfms_df['Stability'], bins=20, color='purple', alpha=0.7)
-    axes[1, 1].set_title('Stability Distribution')
-    
-    plt.tight_layout()
     plt.show()
 
 def visualize_rfms_space(final_df):
-    """Visualize RFMS space."""
     plt.figure(figsize=(10, 6))
     plt.scatter(final_df['Monetary'], final_df['Frequency'], c=final_df['RFMS_Score'], cmap='viridis')
     plt.colorbar(label='RFMS Score')
@@ -67,38 +65,23 @@ def visualize_rfms_space(final_df):
     plt.ylabel('Frequency')
     plt.show()
 
-def assign_risk_labels(final_df, threshold=0.5):
-    """Assign labels based on RFMS score."""
-    final_df['Risk_Label'] = np.where(final_df['RFMS_Score'] > threshold, 'Good', 'Bad')
-    return final_df
-
-def woe_binning(df, feature, target):
-    """Calculate WoE and IV for binning."""
-    df['bin'] = pd.qcut(df[feature], q=10, duplicates='drop')  # Create quantile-based bins
-    bin_stats = df.groupby('bin').agg(
-        bad_count=(target, lambda x: (x == 'Bad').sum()),
-        good_count=(target, lambda x: (x == 'Good').sum()),
-        total_count=(target, 'count')
-    ).reset_index()
-
-    # Calculate WoE and IV
-    bin_stats['bad_rate'] = bin_stats['bad_count'] / bin_stats['bad_count'].sum()
-    bin_stats['good_rate'] = bin_stats['good_count'] / bin_stats['good_count'].sum()
-    bin_stats['WoE'] = np.log(bin_stats['good_rate'] / bin_stats['bad_rate'])
-    bin_stats['IV'] = (bin_stats['good_rate'] - bin_stats['bad_rate']) * bin_stats['WoE']
-
-    return bin_stats[['bin', 'bad_count', 'good_count', 'WoE', 'IV']], bin_stats['IV'].sum()
-
-def apply_woe_binning(final_df):
-    """Apply WoE binning to selected features."""
-    woe_features = ['Monetary', 'Frequency', 'Recency', 'Stability']
-    for feature in woe_features:
-        print(f"\nFeature: {feature}")
-        bin_stats, iv = woe_binning(final_df, feature, 'Risk_Label')
-        print(bin_stats)
-        print(f"Information Value (IV) for {feature}: {iv:.4f}")
-
-
-
-
-
+# Main function that ties everything together
+def process_rfms_binning(final_df):
+    # Step 1: Calculate RFMS components
+    final_df = calculate_rfms_components(final_df)
+    
+    # Step 2: Visualize RFMS distribution and RFMS space
+    plot_rfms_score_distribution(final_df)
+    visualize_rfms_space(final_df)
+    
+    # Step 3: Apply risk labeling
+    final_df = apply_risk_label(final_df, threshold=0.5)
+    
+    # Step 4: Bin RFMS score into discrete categories
+    final_df = bin_rfms_score(final_df, n_bins=5)
+    
+    # Step 5: Apply WoE binning
+    woe_df = apply_woe_binning(final_df, 'RFMS_Binned', 'Risk_Label')
+    print(woe_df)
+    
+    return final_df, woe_df
