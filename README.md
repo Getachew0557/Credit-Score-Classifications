@@ -1,4 +1,4 @@
-# Building a Credit Scoring Model for Buy-Now-Pay-Later Services: A Comprehensive Analysis of Credit Risk Classification
+# Credit Scoring and Risk Prediction for Loan Optimization at Bati Bank Using Machine Learning techniques
 
 ## Project Overview
 
