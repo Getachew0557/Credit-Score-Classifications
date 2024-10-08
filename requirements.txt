@@ -11,3 +11,4 @@ flask
 sidetable
 monotonic-binning
 scorecardpy
+xgboost
