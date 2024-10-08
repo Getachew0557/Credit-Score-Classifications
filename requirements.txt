@@ -12,3 +12,6 @@ sidetable
 monotonic-binning
 scorecardpy
 xgboost
+fastapi 
+flask 
+uvicorn
