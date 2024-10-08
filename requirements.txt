@@ -3,5 +3,12 @@ numpy
 seaborn
 matplotlib
 joblib
-
-
+scikit-learn
+pytest
+fastapi
+uvicorn
+flask
+sidetable
+monotonic-binning
+scorecardpy
+xgboost
