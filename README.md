@@ -99,7 +99,7 @@ Step-by-step instructions to deploy to Render:
      python flask-app/app.py
     ```
 4. Deploy the app and get the live URL.
-5. Access the deployed app by visiting the Render URL (e.g., https://your-app.onrender.com).
+5. Access the deployed app by visiting the Render URL https://credit-score-classifications-1.onrender.com/
 
 For instructions on setting up and deploying the web API, see the [Web API Deployment Guide](web-api/README.md).
 
